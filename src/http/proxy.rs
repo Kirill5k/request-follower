@@ -1,8 +1,12 @@
 use warp::{Filter, Rejection, Reply};
+use warp::http::{HeaderMap, Method};
 
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    warp::get()
-        .and(warp::path!("hello" / String))
+    warp::path!("hello" / String)
         .and(warp::path::end())
-        .map(|name| format!("Hello, {}!", name))
+        .and(warp::method())
+        .and(warp::header::headers_cloned())
+        .map(|name: String, method: Method, headers: HeaderMap| {
+            format!("Hello, {}!\nMethod: {}\nHeaders: {:?}", name, method, headers)
+        })
 }
