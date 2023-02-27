@@ -1,19 +1,19 @@
-use warp::{Filter, Rejection, Reply};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use warp::{Filter, Rejection, Reply};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AppStatus {
     status: String,
     #[serde(with = "time::serde::rfc3339")]
-    startup_time: OffsetDateTime
+    startup_time: OffsetDateTime,
 }
 
 impl AppStatus {
     fn up(startup_time: OffsetDateTime) -> AppStatus {
         AppStatus {
             status: String::from("up"),
-            startup_time
+            startup_time,
         }
     }
 }
