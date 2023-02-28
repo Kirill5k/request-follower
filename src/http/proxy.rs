@@ -3,17 +3,31 @@ use warp::http::{HeaderMap, Method, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
 
+async fn reroute_request(
+    method: Method,
+    path: FullPath,
+    query: HashMap<String, String>,
+    headers: HeaderMap,
+) -> Result<impl Reply, Rejection> {
+    match headers.get("x-reroute-to") {
+        None => Ok(warp::reply::with_status(
+            "Missing X-Reroute-To header".to_string(),
+            StatusCode::FORBIDDEN,
+        )),
+        Some(url) => {
+            let full_url = url.to_str().unwrap().to_owned() + path.as_str();
+            Ok(warp::reply::with_status(
+                format!("{method} {full_url} {:?}\n{:?}", query, headers),
+                StatusCode::OK,
+            ))
+        }
+    }
+}
+
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::method()
         .and(warp::path::full())
         .and(warp::query::<HashMap<String, String>>())
         .and(warp::header::headers_cloned())
-        .map(
-            |method: Method, path: FullPath, query: HashMap<String, String>, headers: HeaderMap| {
-                warp::reply::with_status(
-                    format!("{method} {:?} {:?}\n{:?}", path, query, headers),
-                    StatusCode::OK,
-                )
-            },
-        )
+        .and_then(reroute_request)
 }
