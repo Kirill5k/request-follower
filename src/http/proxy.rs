@@ -3,13 +3,15 @@ use warp::http::{HeaderMap, Method, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
 
+const X_REROUTE_TO_HEADER: &str = "X-Reroute-To";
+
 async fn reroute_request(
     method: Method,
     path: FullPath,
     query: HashMap<String, String>,
     headers: HeaderMap,
 ) -> Result<impl Reply, Rejection> {
-    match headers.get("x-reroute-to") {
+    match headers.get(X_REROUTE_TO_HEADER) {
         None => Ok(warp::reply::with_status(
             "Missing X-Reroute-To header".to_string(),
             StatusCode::FORBIDDEN,
