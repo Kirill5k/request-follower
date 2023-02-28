@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -23,5 +24,10 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
     warp::get()
         .and(warp::path!("health" / "status"))
         .and(warp::path::end())
-        .map(move || warp::reply::json(&AppStatus::up(startup_time)))
+        .map(move || {
+            warp::reply::with_status(
+                warp::reply::json(&AppStatus::up(startup_time)),
+                StatusCode::OK,
+            )
+        })
 }
