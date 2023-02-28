@@ -6,7 +6,7 @@ pub mod http;
 
 #[tokio::main]
 async fn main() {
-    let routes = proxy::routes().or(health::routes());
+    let routes = health::routes().or(proxy::routes());
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
