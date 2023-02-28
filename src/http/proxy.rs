@@ -9,12 +9,9 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
         .and(warp::query::<HashMap<String, String>>())
         .and(warp::header::headers_cloned())
         .map(
-            |method: Method,
-             full_path: FullPath,
-             query: HashMap<String, String>,
-             headers: HeaderMap| {
+            |method: Method, path: FullPath, query: HashMap<String, String>, headers: HeaderMap| {
                 warp::reply::with_status(
-                    format!("{method} {:?} {:?}\n{:?}", full_path, query, headers),
+                    format!("{method} {:?} {:?}\n{:?}", path, query, headers),
                     StatusCode::OK,
                 )
             },
