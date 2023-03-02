@@ -7,24 +7,25 @@ use warp::reply::WithStatus;
 use warp::{Filter, Rejection, Reply};
 
 const X_REROUTE_TO_HEADER: &str = "x-reroute-to";
+const X_ACCEPT_ENCODING: &str = "x-accept-encoding";
+const X_RELOAD_ON_403: &str = "x-reload-on-403";
 
 lazy_static! {
     static ref CLIENT: Client = Client::new();
     static ref HEADERS_TO_REMOVE: HashSet<&'static str> = {
         HashSet::from([
             X_REROUTE_TO_HEADER,
-            "x-reload-on-403",
-            "x-proxied",
-            "x-accept-encoding",
-            "accept-encoding",
+            X_ACCEPT_ENCODING,
+            X_RELOAD_ON_403,
             "host",
+            "x-proxied",
             "x-real-ip",
+            "x-scheme",
             "x-forwarded-for",
             "x-forwarded-port",
             "x-forwarded-scheme",
             "x-forwarded-host",
             "x-forwarded-proto",
-            "x-scheme",
         ])
     };
 }
@@ -45,6 +46,9 @@ impl RequestMetadata {
                 headers.insert(&*h, v.into());
             }
         }
+        if let Some(hv) = self.headers.get(X_ACCEPT_ENCODING) {
+            headers.insert(reqwest::header::ACCEPT_ENCODING, hv.into());
+        }
         headers
     }
 }
@@ -59,9 +63,7 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, u16), Er
         .await?;
 
     let code = res.status().as_u16();
-    res.text()
-        .await
-        .map(|res_body| (res_body, code))
+    res.text().await.map(|res_body| (res_body, code))
 }
 
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
