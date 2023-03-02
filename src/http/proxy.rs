@@ -91,7 +91,7 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
                         };
                         let (res_body, res_status) = dispatch(req_metadata)
                             .await
-                            .unwrap_or(("error".to_string(), 500));
+                            .unwrap_or_else(|error|(error, 500));
                         Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
                             res_body,
                             StatusCode::from_u16(res_status).unwrap(),
