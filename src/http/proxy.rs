@@ -75,11 +75,7 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
         .and(warp::header::headers_cloned())
         .and(warp::body::bytes())
         .and_then(
-            |method: Method,
-             path: FullPath,
-             query: HashMap<String, String>,
-             headers: HeaderMap,
-             body: Bytes| async move {
+            |method, path: FullPath, query, headers: HeaderMap, body: Bytes| async move {
                 match headers.get(X_REROUTE_TO_HEADER) {
                     None => Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
                         "Missing X-Reroute-To header".to_string(),
