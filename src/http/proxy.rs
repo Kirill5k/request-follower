@@ -38,12 +38,11 @@ struct RequestMetadata {
 }
 
 impl RequestMetadata {
-    fn sanitised_headers(&self) -> HashMap<String, String> {
-        let mut headers = HashMap::new();
+    fn sanitised_headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         for (h, v) in self.headers.iter() {
-            let header_name = h.as_str();
-            if !HEADERS_TO_REMOVE.contains(header_name) {
-                headers.insert(header_name.to_owned(), v.to_str().unwrap().to_owned());
+            if !HEADERS_TO_REMOVE.contains(h.as_str()) {
+                headers.insert(h.clone(), v.clone());
             }
         }
         headers
@@ -63,14 +62,23 @@ impl HttpClient {
     }
 
     async fn dispatch(&self, request_metadata: RequestMetadata) -> Result<(String, u16), String> {
-        Ok((
-            format!(
-                "{:?}\n{:?}",
-                request_metadata,
-                request_metadata.sanitised_headers()
-            ),
-            200,
-        ))
+        let response = self
+            .client
+            .request(request_metadata.method.clone(), &request_metadata.url)
+            .query(&Vec::from_iter(request_metadata.query_params.iter()))
+            .body(request_metadata.body.clone())
+            .headers(request_metadata.sanitised_headers())
+            .send()
+            .await
+            .unwrap();
+
+        let status_code = response.status().as_u16();
+
+        response
+            .text()
+            .await
+            .map(|res_body| (res_body, status_code))
+            .map_err(|error| error.to_string())
     }
 }
 
