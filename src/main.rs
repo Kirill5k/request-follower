@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use crate::http::health;
 use crate::http::proxy;
 use warp::Filter;

@@ -1,12 +1,32 @@
 use bytes::Bytes;
 use reqwest::Client;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use warp::http::{HeaderMap, Method, StatusCode};
 use warp::path::FullPath;
 use warp::reply::WithStatus;
 use warp::{Filter, Rejection, Reply};
 
-const X_REROUTE_TO_HEADER: &str = "X-Reroute-To";
+const X_REROUTE_TO_HEADER: &str = "x-reroute-to";
+
+lazy_static! {
+    static ref HEADERS_TO_REMOVE: HashSet<&'static str> = {
+        HashSet::from([
+            X_REROUTE_TO_HEADER,
+            "x-reload-on-403",
+            "x-proxied",
+            "x-accept-encoding",
+            "accept-encoding",
+            "host",
+            "x-real-ip",
+            "x-forwarded-for",
+            "x-forwarded-port",
+            "x-forwarded-scheme",
+            "x-forwarded-host",
+            "x-forwarded-proto",
+            "x-scheme",
+        ])
+    };
+}
 
 #[derive(Debug)]
 struct RequestMetadata {
@@ -21,7 +41,10 @@ impl RequestMetadata {
     fn sanitised_headers(&self) -> HashMap<String, String> {
         let mut headers = HashMap::new();
         for (h, v) in self.headers.iter() {
-            headers.insert(h.as_str().to_owned(), v.to_str().unwrap().to_owned());
+            let header_name = h.as_str();
+            if !HEADERS_TO_REMOVE.contains(header_name) {
+                headers.insert(header_name.to_owned(), v.to_str().unwrap().to_owned());
+            }
         }
         headers
     }

@@ -751,6 +751,7 @@ name = "request-follower"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "lazy_static",
  "reqwest",
  "serde",
  "time",
