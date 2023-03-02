@@ -28,7 +28,6 @@ lazy_static! {
     };
 }
 
-#[derive(Debug)]
 struct RequestMetadata {
     method: Method,
     url: String,
