@@ -56,16 +56,18 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, u16), St
         .body(request_metadata.body.clone())
         .headers(request_metadata.sanitised_headers())
         .send()
-        .await
-        .unwrap();
+        .await;
 
-    let status_code = response.status().as_u16();
-
-    response
-        .text()
-        .await
-        .map(|res_body| (res_body, status_code))
-        .map_err(|error| error.to_string())
+    match response {
+        Ok(res) => {
+            let code = res.status().as_u16();
+            res.text()
+                .await
+                .map(|res_body| (res_body, code))
+                .map_err(|err| err.to_string())
+        }
+        Err(err) => Err(err.to_string()),
+    }
 }
 
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -91,7 +93,7 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
                         };
                         let (res_body, res_status) = dispatch(req_metadata)
                             .await
-                            .unwrap_or_else(|error|(error, 500));
+                            .unwrap_or_else(|err| (err, 500));
                         Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
                             res_body,
                             StatusCode::from_u16(res_status).unwrap(),
