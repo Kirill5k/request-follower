@@ -50,24 +50,20 @@ impl RequestMetadata {
 }
 
 async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, u16), String> {
-    let response = CLIENT
+    let res = CLIENT
         .request(request_metadata.method.clone(), &request_metadata.url)
         .query(&Vec::from_iter(request_metadata.query_params.iter()))
         .body(request_metadata.body.clone())
         .headers(request_metadata.sanitised_headers())
         .send()
-        .await;
+        .await
+        .map_err(|err| err.to_string())?;
 
-    match response {
-        Ok(res) => {
-            let code = res.status().as_u16();
-            res.text()
-                .await
-                .map(|res_body| (res_body, code))
-                .map_err(|err| err.to_string())
-        }
-        Err(err) => Err(err.to_string()),
-    }
+    let code = res.status().as_u16();
+    res.text()
+        .await
+        .map(|res_body| (res_body, code))
+        .map_err(|err| err.to_string())
 }
 
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
