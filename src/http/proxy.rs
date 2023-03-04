@@ -53,7 +53,7 @@ impl RequestMetadata {
     }
 }
 
-async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, u16), Error> {
+async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, StatusCode), Error> {
     let res = CLIENT
         .request(request_metadata.method.clone(), &request_metadata.url)
         .query(&Vec::from_iter(request_metadata.query_params.iter()))
@@ -62,8 +62,8 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, u16), Er
         .send()
         .await?;
 
-    let code = res.status().as_u16();
-    res.text().await.map(|res_body| (res_body, code))
+    let res_status = res.status();
+    res.text().await.map(|res_body| (res_body, res_status))
 }
 
 pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -87,12 +87,12 @@ pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clo
                             query_params: query,
                             headers,
                         };
-                        let (res_body, res_status) = dispatch(req_metadata)
-                            .await
-                            .unwrap_or_else(|err| (err.to_string(), 500));
+                        let (res_body, res_status) =
+                            dispatch(req_metadata).await.unwrap_or_else(|err| {
+                                (err.to_string(), StatusCode::INTERNAL_SERVER_ERROR)
+                            });
                         Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
-                            res_body,
-                            StatusCode::from_u16(res_status).unwrap(),
+                            res_body, res_status,
                         ))
                     }
                 }
