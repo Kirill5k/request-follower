@@ -6,7 +6,6 @@ extern crate log;
 use crate::http::health;
 use crate::http::proxy;
 use time::OffsetDateTime;
-use tokio::signal::unix::{signal, SignalKind};
 use warp::Filter;
 
 pub mod http;
@@ -33,9 +32,9 @@ async fn main() {
     env_logger::init();
     info!("starting request-follower");
 
-    let interrupter = Interrupter::new();
+    let (_tx, rx) = tokio::sync::oneshot::channel::<()>();
 
-    let stream = signal(SignalKind::terminate());
+    let interrupter = Interrupter::new();
 
     let routes = health::routes(interrupter)
         .or(proxy::routes(interrupter))
@@ -43,7 +42,7 @@ async fn main() {
 
     let (_, server) =
         warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], 3030), async move {
-            stream.expect("REASON").recv().await;
+            rx.await.ok();
         });
 
     server.await
