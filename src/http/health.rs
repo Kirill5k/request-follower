@@ -35,6 +35,7 @@ pub fn routes(
         .and(warp::any().map(move || interrupter.clone()));
 
     let get_status = endpoint_base
+        .clone()
         .and(warp::get())
         .map(move |interrupter: Interrupter| {
             warp::reply::with_status(
@@ -43,15 +44,17 @@ pub fn routes(
             )
         });
 
-    let restart_app = endpoint_base
-        .and(warp::delete())
-        .map(move |interrupter: Interrupter| {
-            interrupter.interrupt();
-            warp::reply::with_status(
-                warp::reply::json(&AppStatus::down(interrupter.startup_time)),
-                StatusCode::IM_A_TEAPOT,
-            )
-        });
+    let restart_app =
+        endpoint_base
+            .clone()
+            .and(warp::delete())
+            .map(move |interrupter: Interrupter| {
+                interrupter.interrupt();
+                warp::reply::with_status(
+                    warp::reply::json(&AppStatus::down(interrupter.startup_time)),
+                    StatusCode::IM_A_TEAPOT,
+                )
+            });
 
     get_status.or(restart_app)
 }
