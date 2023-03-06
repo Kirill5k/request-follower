@@ -5,8 +5,9 @@ extern crate log;
 
 use crate::http::health;
 use crate::http::proxy;
-use warp::Filter;
 use time::OffsetDateTime;
+use tokio::signal::unix::{signal, SignalKind};
+use warp::Filter;
 
 pub mod http;
 
@@ -18,8 +19,12 @@ pub struct Interrupter {
 impl Interrupter {
     fn new() -> Self {
         Interrupter {
-            startup_time: OffsetDateTime::now_utc()
+            startup_time: OffsetDateTime::now_utc(),
         }
+    }
+
+    fn interrupt(&self) {
+        panic!("shutting down the app")
     }
 }
 
@@ -30,9 +35,16 @@ async fn main() {
 
     let interrupter = Interrupter::new();
 
+    let stream = signal(SignalKind::terminate());
+
     let routes = health::routes(interrupter)
         .or(proxy::routes(interrupter))
         .with(warp::log("request_follower"));
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    let (_, server) =
+        warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], 3030), async move {
+            stream.expect("REASON").recv().await;
+        });
+
+    server.await
 }

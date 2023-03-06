@@ -1,3 +1,4 @@
+use crate::Interrupter;
 use bytes::Bytes;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
@@ -5,7 +6,6 @@ use warp::http::{HeaderMap, Method, StatusCode};
 use warp::path::FullPath;
 use warp::reply::WithStatus;
 use warp::{Filter, Rejection, Reply};
-use crate::Interrupter;
 
 const X_REROUTE_TO_HEADER: &str = "x-reroute-to";
 const X_ACCEPT_ENCODING: &str = "x-accept-encoding";
@@ -67,7 +67,9 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, StatusCo
     res.text().await.map(|res_body| (res_body, res_status))
 }
 
-pub fn routes(interrupter: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn routes(
+    interrupter: Interrupter,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     println!("{}", interrupter.startup_time);
     warp::method()
         .and(warp::path::full())

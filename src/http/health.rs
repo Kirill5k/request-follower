@@ -1,8 +1,8 @@
+use crate::Interrupter;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
-use crate::Interrupter;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AppStatus {
@@ -18,9 +18,18 @@ impl AppStatus {
             startup_time,
         }
     }
+
+    fn down(startup_time: OffsetDateTime) -> AppStatus {
+        AppStatus {
+            status: String::from("down"),
+            startup_time,
+        }
+    }
 }
 
-pub fn routes(interrupter: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn routes(
+    interrupter: Interrupter,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let endpoint_base = warp::path!("health" / "status")
         .and(warp::path::end())
         .and(warp::any().map(move || interrupter.clone()));
@@ -37,8 +46,9 @@ pub fn routes(interrupter: Interrupter) -> impl Filter<Extract = (impl Reply,), 
     let restart_app = endpoint_base
         .and(warp::delete())
         .map(move |interrupter: Interrupter| {
+            interrupter.interrupt();
             warp::reply::with_status(
-                warp::reply::json(&AppStatus::up(interrupter.startup_time)),
+                warp::reply::json(&AppStatus::down(interrupter.startup_time)),
                 StatusCode::IM_A_TEAPOT,
             )
         });
