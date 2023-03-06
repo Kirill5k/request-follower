@@ -10,6 +10,7 @@ use time::OffsetDateTime;
 
 pub mod http;
 
+#[derive(Clone, Copy, Debug)]
 pub struct Interrupter {
     startup_time: OffsetDateTime,
 }
@@ -29,8 +30,8 @@ async fn main() {
 
     let interrupter = Interrupter::new();
 
-    let routes = health::routes()
-        .or(proxy::routes())
+    let routes = health::routes(interrupter)
+        .or(proxy::routes(interrupter))
         .with(warp::log("request_follower"));
 
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;

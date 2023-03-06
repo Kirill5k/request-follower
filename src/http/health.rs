@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
+use crate::Interrupter;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct AppStatus {
@@ -19,14 +20,14 @@ impl AppStatus {
     }
 }
 
-pub fn routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let startup_time = OffsetDateTime::now_utc();
+pub fn routes(interrupter: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::get()
         .and(warp::path!("health" / "status"))
         .and(warp::path::end())
-        .map(move || {
+        .and(warp::any().map(move || interrupter.clone()))
+        .map(move |interrupter: Interrupter| {
             warp::reply::with_status(
-                warp::reply::json(&AppStatus::up(startup_time)),
+                warp::reply::json(&AppStatus::up(interrupter.startup_time)),
                 StatusCode::OK,
             )
         })
