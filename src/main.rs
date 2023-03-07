@@ -9,8 +9,10 @@ use time::OffsetDateTime;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 use warp::Filter;
+use crate::config::AppConfig;
 
 pub mod http;
+pub mod config;
 
 #[derive(Clone, Debug)]
 pub struct Interrupter {
@@ -36,6 +38,8 @@ async fn main() {
     env_logger::init();
     info!("starting request-follower");
 
+    let config = AppConfig::new().unwrap();
+
     let (tx, mut rx) = mpsc::channel::<()>(1);
     let interrupter = Interrupter::new(tx);
 
@@ -44,7 +48,7 @@ async fn main() {
         .with(warp::log("request_follower"));
 
     let (_, server) =
-        warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], 3030), async move {
+        warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], config.server.port), async move {
             rx.recv().await;
             info!("received termination signal")
         });
