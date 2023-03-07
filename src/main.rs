@@ -36,9 +36,9 @@ impl Interrupter {
 #[tokio::main]
 async fn main() {
     env_logger::init();
-    info!("starting request-follower");
-
+    info!("starting request-follower app");
     let config = AppConfig::new().unwrap();
+    info!("loaded config {:?}", config);
 
     let (tx, mut rx) = mpsc::channel::<()>(1);
     let interrupter = Interrupter::new(tx);
@@ -47,8 +47,9 @@ async fn main() {
         .or(proxy::routes(interrupter.clone()))
         .with(warp::log("request_follower"));
 
+    info!("starting web-server on port {}", config.server.port);
     let (_, server) =
-        warp::serve(routes).bind_with_graceful_shutdown(([127, 0, 0, 1], config.server.port), async move {
+        warp::serve(routes).bind_with_graceful_shutdown(([0, 0, 0, 0], config.server.port), async move {
             rx.recv().await;
             info!("received termination signal")
         });
