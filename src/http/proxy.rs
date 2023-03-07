@@ -2,9 +2,8 @@ use crate::Interrupter;
 use bytes::Bytes;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
-use warp::http::{HeaderMap, Method, StatusCode};
+use warp::http::{HeaderMap, Method, Response, StatusCode};
 use warp::path::FullPath;
-use warp::reply::WithStatus;
 use warp::{Filter, Rejection, Reply};
 
 const X_REROUTE_TO_HEADER: &str = "x-reroute-to";
@@ -61,12 +60,31 @@ struct ResponseMetadata {
 }
 
 impl ResponseMetadata {
-    fn error(err: String) -> Self {
+    fn forbidden(err: String) -> Self {
+        ResponseMetadata {
+            body: err,
+            status: StatusCode::FORBIDDEN,
+            headers: HeaderMap::new(),
+        }
+    }
+
+    fn internal_error(err: String) -> Self {
         ResponseMetadata {
             body: err,
             status: StatusCode::INTERNAL_SERVER_ERROR,
             headers: HeaderMap::new(),
         }
+    }
+
+    fn to_response(&self) -> Response<warp::hyper::Body> {
+        let mut res = Response::builder();
+        for (k, v) in self.headers.iter() {
+            res = res.header(k, v);
+        }
+
+        res.status(&self.status)
+            .body(self.body.clone().into())
+            .unwrap()
     }
 }
 
@@ -98,10 +116,10 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
         .and_then(
             |method, path: FullPath, query, headers: HeaderMap, body: Bytes| async move {
                 match headers.get(X_REROUTE_TO_HEADER) {
-                    None => Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
-                        "Missing X-Reroute-To header".to_string(),
-                        StatusCode::FORBIDDEN,
-                    )),
+                    None => Ok::<Response<warp::hyper::Body>, Rejection>(
+                        ResponseMetadata::forbidden(String::from("Missing X-Reroute-To header"))
+                            .to_response(),
+                    ),
                     Some(url) => {
                         let req_metadata = RequestMetadata {
                             method,
@@ -110,13 +128,10 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        let res_metadata = dispatch(req_metadata)
-                            .await
-                            .unwrap_or_else(|err| ResponseMetadata::error(err.to_string()));
-                        Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
-                            res_metadata.body,
-                            res_metadata.status,
-                        ))
+                        let res_metadata = dispatch(req_metadata).await.unwrap_or_else(|err| {
+                            ResponseMetadata::internal_error(err.to_string())
+                        });
+                        Ok::<Response<warp::hyper::Body>, Rejection>(res_metadata.to_response())
                     }
                 }
             },
