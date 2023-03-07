@@ -54,7 +54,23 @@ impl RequestMetadata {
     }
 }
 
-async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, StatusCode), Error> {
+struct ResponseMetadata {
+    headers: HeaderMap,
+    status: StatusCode,
+    body: String
+}
+
+impl ResponseMetadata {
+    fn error(err: String) -> Self {
+        ResponseMetadata {
+            body: err,
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            headers: HeaderMap::new()
+        }
+    }
+}
+
+async fn dispatch(request_metadata: RequestMetadata) -> Result<ResponseMetadata, Error> {
     let res = CLIENT
         .request(request_metadata.method.clone(), &request_metadata.url)
         .query(&Vec::from_iter(request_metadata.query_params.iter()))
@@ -64,7 +80,14 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, StatusCo
         .await?;
 
     let res_status = res.status();
-    res.text().await.map(|res_body| (res_body, res_status))
+    let res_headers = res.headers().clone();
+    res.text().await.map(|res_body| {
+        ResponseMetadata {
+            body: res_body,
+            status: res_status,
+            headers: res_headers
+        }
+    })
 }
 
 pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -89,12 +112,9 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        let (res_body, res_status) =
-                            dispatch(req_metadata).await.unwrap_or_else(|err| {
-                                (err.to_string(), StatusCode::INTERNAL_SERVER_ERROR)
-                            });
+                        let res = dispatch(req_metadata).await.unwrap_or_else(|err| ResponseMetadata::error(err.to_string()));
                         Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
-                            res_body, res_status,
+                            res.body, res.status,
                         ))
                     }
                 }
