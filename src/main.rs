@@ -3,16 +3,16 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 
+use crate::config::AppConfig;
 use crate::http::health;
 use crate::http::proxy;
 use time::OffsetDateTime;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 use warp::Filter;
-use crate::config::AppConfig;
 
-pub mod http;
 pub mod config;
+pub mod http;
 
 #[derive(Clone, Debug)]
 pub struct Interrupter {
@@ -48,11 +48,13 @@ async fn main() {
         .with(warp::log("request_follower"));
 
     info!("starting web-server on port {}", config.server.port);
-    let (_, server) =
-        warp::serve(routes).bind_with_graceful_shutdown(([0, 0, 0, 0], config.server.port), async move {
+    let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(
+        ([0, 0, 0, 0], config.server.port),
+        async move {
             rx.recv().await;
             info!("received termination signal")
-        });
+        },
+    );
 
     server.await
 }

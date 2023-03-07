@@ -5,12 +5,12 @@ const CONFIG_FILE_PATH: &str = "./config/Default";
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ServerConfig {
-    pub port: u16
+    pub port: u16,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
-    pub server: ServerConfig
+    pub server: ServerConfig,
 }
 
 impl AppConfig {

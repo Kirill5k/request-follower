@@ -57,7 +57,7 @@ impl RequestMetadata {
 struct ResponseMetadata {
     headers: HeaderMap,
     status: StatusCode,
-    body: String
+    body: String,
 }
 
 impl ResponseMetadata {
@@ -65,7 +65,7 @@ impl ResponseMetadata {
         ResponseMetadata {
             body: err,
             status: StatusCode::INTERNAL_SERVER_ERROR,
-            headers: HeaderMap::new()
+            headers: HeaderMap::new(),
         }
     }
 }
@@ -81,12 +81,10 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<ResponseMetadata,
 
     let res_status = res.status();
     let res_headers = res.headers().clone();
-    res.text().await.map(|res_body| {
-        ResponseMetadata {
-            body: res_body,
-            status: res_status,
-            headers: res_headers
-        }
+    res.text().await.map(|res_body| ResponseMetadata {
+        body: res_body,
+        status: res_status,
+        headers: res_headers,
     })
 }
 
@@ -112,9 +110,12 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        let res = dispatch(req_metadata).await.unwrap_or_else(|err| ResponseMetadata::error(err.to_string()));
+                        let res_metadata = dispatch(req_metadata)
+                            .await
+                            .unwrap_or_else(|err| ResponseMetadata::error(err.to_string()));
                         Ok::<WithStatus<String>, Rejection>(warp::reply::with_status(
-                            res.body, res.status,
+                            res_metadata.body,
+                            res_metadata.status,
                         ))
                     }
                 }
