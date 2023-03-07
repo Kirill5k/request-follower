@@ -27,12 +27,10 @@ impl AppStatus {
     }
 }
 
-pub fn routes(
-    interrupter: Interrupter,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let endpoint_base = warp::path!("health" / "status")
         .and(warp::path::end())
-        .and(warp::any().map(move || interrupter.clone()));
+        .and(warp::any().map(move || int.clone()));
 
     let get_status = endpoint_base
         .clone()
@@ -44,7 +42,7 @@ pub fn routes(
             )
         });
 
-    let restart_app =
+    let interrupt_app =
         endpoint_base
             .clone()
             .and(warp::delete())
@@ -56,5 +54,5 @@ pub fn routes(
                 )
             });
 
-    get_status.or(restart_app)
+    get_status.or(interrupt_app)
 }

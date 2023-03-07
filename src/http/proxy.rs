@@ -67,10 +67,8 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<(String, StatusCo
     res.text().await.map(|res_body| (res_body, res_status))
 }
 
-pub fn routes(
-    interrupter: Interrupter,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    println!("{}", interrupter.startup_time);
+pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+    println!("{}", int.startup_time);
     warp::method()
         .and(warp::path::full())
         .and(warp::query::<HashMap<String, String>>())
