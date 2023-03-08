@@ -115,11 +115,10 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
         .and(warp::body::bytes())
         .and_then(
             |method, path: FullPath, query, headers: HeaderMap, body: Bytes| async move {
-                match headers.get(X_REROUTE_TO_HEADER) {
-                    None => Ok::<Response<warp::hyper::Body>, Rejection>(
+                let res = match headers.get(X_REROUTE_TO_HEADER) {
+                    None => {
                         ResponseMetadata::forbidden(String::from("Missing X-Reroute-To header"))
-                            .to_response(),
-                    ),
+                    }
                     Some(url) => {
                         let req_metadata = RequestMetadata {
                             method,
@@ -128,12 +127,12 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        let res_metadata = dispatch(req_metadata).await.unwrap_or_else(|err| {
-                            ResponseMetadata::internal_error(err.to_string())
-                        });
-                        Ok::<Response<warp::hyper::Body>, Rejection>(res_metadata.to_response())
+                        dispatch(req_metadata)
+                            .await
+                            .unwrap_or_else(|err| ResponseMetadata::internal_error(err.to_string()))
                     }
-                }
+                };
+                Ok::<Response<warp::hyper::Body>, Rejection>(res.to_response())
             },
         )
 }
