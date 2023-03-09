@@ -6,7 +6,7 @@ extern crate log;
 use crate::config::AppConfig;
 use crate::http::health;
 use crate::http::proxy;
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 use warp::Filter;
@@ -18,6 +18,7 @@ pub mod http;
 pub struct Interrupter {
     startup_time: OffsetDateTime,
     sender: Sender<()>,
+    initial_delay: Duration
 }
 
 impl Interrupter {
@@ -25,11 +26,15 @@ impl Interrupter {
         Interrupter {
             startup_time: OffsetDateTime::now_utc(),
             sender,
+            initial_delay: Duration::minutes(30)
         }
     }
 
     fn interrupt(&self) {
-        self.sender.try_send(()).unwrap();
+        let difference = OffsetDateTime::now_utc() - self.startup_time;
+        if difference > self.initial_delay {
+            self.sender.try_send(()).unwrap();
+        }
     }
 }
 
