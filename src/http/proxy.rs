@@ -51,6 +51,10 @@ impl RequestMetadata {
         }
         headers
     }
+
+    fn reload_on_403(&self) -> bool {
+        self.headers.contains_key(X_RELOAD_ON_403)
+    }
 }
 
 struct ResponseMetadata {
@@ -107,7 +111,6 @@ async fn dispatch(request_metadata: RequestMetadata) -> Result<ResponseMetadata,
 }
 
 pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    println!("{}", int.startup_time);
     warp::method()
         .and(warp::path::full())
         .and(warp::query::<HashMap<String, String>>())
