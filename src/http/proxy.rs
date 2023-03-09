@@ -92,17 +92,22 @@ impl ResponseMetadata {
     }
 }
 
-async fn dispatch(request_metadata: RequestMetadata) -> Result<ResponseMetadata, Error> {
+async fn dispatch(int: Interrupter, req_metadata: RequestMetadata) -> Result<ResponseMetadata, Error> {
     let res = CLIENT
-        .request(request_metadata.method.clone(), &request_metadata.url)
-        .query(&Vec::from_iter(request_metadata.query_params.iter()))
-        .body(request_metadata.body.clone())
-        .headers(request_metadata.sanitised_headers())
+        .request(req_metadata.method.clone(), &req_metadata.url)
+        .query(&Vec::from_iter(req_metadata.query_params.iter()))
+        .body(req_metadata.body.clone())
+        .headers(req_metadata.sanitised_headers())
         .send()
         .await?;
 
     let res_status = res.status();
     let res_headers = res.headers().clone();
+
+    if req_metadata.reload_on_403() && res_status == StatusCode::FORBIDDEN {
+        int.interrupt();
+    }
+
     res.text().await.map(|res_body| ResponseMetadata {
         body: res_body,
         status: res_status,
@@ -116,8 +121,9 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
         .and(warp::query::<HashMap<String, String>>())
         .and(warp::header::headers_cloned())
         .and(warp::body::bytes())
+        .and(warp::any().map(move || int.clone()))
         .and_then(
-            |method, path: FullPath, query, headers: HeaderMap, body: Bytes| async move {
+            |method, path: FullPath, query, headers: HeaderMap, body: Bytes, int: Interrupter| async move {
                 let res = match headers.get(X_REROUTE_TO_HEADER) {
                     None => {
                         ResponseMetadata::forbidden(String::from("Missing X-Reroute-To header"))
@@ -130,7 +136,7 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        dispatch(req_metadata)
+                        dispatch(int, req_metadata)
                             .await
                             .unwrap_or_else(|err| ResponseMetadata::internal_error(err.to_string()))
                     }
