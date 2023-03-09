@@ -1,6 +1,6 @@
 use crate::Interrupter;
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use time::{Duration, OffsetDateTime};
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
@@ -9,6 +9,7 @@ struct AppStatus {
     status: String,
     #[serde(with = "time::serde::rfc3339")]
     startup_time: OffsetDateTime,
+    up_time: Duration
 }
 
 impl AppStatus {
@@ -16,6 +17,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("up"),
             startup_time,
+            up_time: OffsetDateTime::now_utc() - startup_time
         }
     }
 
@@ -23,6 +25,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("down"),
             startup_time,
+            up_time: OffsetDateTime::now_utc() - startup_time
         }
     }
 }
