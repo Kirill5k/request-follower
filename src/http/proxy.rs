@@ -104,7 +104,7 @@ async fn dispatch(int: Interrupter, req_metadata: RequestMetadata) -> Result<Res
     let res_status = res.status();
     let res_headers = res.headers().clone();
 
-    if req_metadata.reload_on_403() && res_status == StatusCode::FORBIDDEN {
+    if res_status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
         int.interrupt();
     }
 
