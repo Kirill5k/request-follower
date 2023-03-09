@@ -92,7 +92,10 @@ impl ResponseMetadata {
     }
 }
 
-async fn dispatch(int: Interrupter, req_metadata: RequestMetadata) -> Result<ResponseMetadata, Error> {
+async fn dispatch(
+    int: Interrupter,
+    req_metadata: RequestMetadata,
+) -> Result<ResponseMetadata, Error> {
     let res = CLIENT
         .request(req_metadata.method.clone(), &req_metadata.url)
         .query(&Vec::from_iter(req_metadata.query_params.iter()))

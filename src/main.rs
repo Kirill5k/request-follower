@@ -31,9 +31,11 @@ impl Interrupter {
     }
 
     fn interrupt(&self) {
-        let difference = OffsetDateTime::now_utc() - self.startup_time;
-        if difference > self.initial_delay {
+        let diff = OffsetDateTime::now_utc() - self.startup_time;
+        if diff > self.initial_delay {
             self.sender.try_send(()).unwrap();
+        } else {
+            info!("termination is delayed as app has started {}min ago", diff.whole_minutes());
         }
     }
 }

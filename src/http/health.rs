@@ -9,7 +9,7 @@ struct AppStatus {
     status: String,
     #[serde(with = "time::serde::rfc3339")]
     startup_time: OffsetDateTime,
-    up_time: Duration
+    up_time: Duration,
 }
 
 impl AppStatus {
@@ -17,7 +17,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("up"),
             startup_time,
-            up_time: OffsetDateTime::now_utc() - startup_time
+            up_time: OffsetDateTime::now_utc() - startup_time,
         }
     }
 
@@ -25,7 +25,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("down"),
             startup_time,
-            up_time: OffsetDateTime::now_utc() - startup_time
+            up_time: OffsetDateTime::now_utc() - startup_time,
         }
     }
 }
