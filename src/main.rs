@@ -18,7 +18,7 @@ pub mod http;
 pub struct Interrupter {
     startup_time: OffsetDateTime,
     sender: Sender<()>,
-    initial_delay: Duration
+    initial_delay: Duration,
 }
 
 impl Interrupter {
@@ -26,7 +26,7 @@ impl Interrupter {
         Interrupter {
             startup_time: OffsetDateTime::now_utc(),
             sender,
-            initial_delay: Duration::minutes(30)
+            initial_delay: Duration::minutes(30),
         }
     }
 
@@ -36,7 +36,10 @@ impl Interrupter {
             info!("sending termination signal");
             self.sender.try_send(()).unwrap();
         } else {
-            info!("termination is delayed as app has started {}min ago", diff.whole_minutes());
+            info!(
+                "termination is delayed as app has started {}min ago",
+                diff.whole_minutes()
+            );
         }
     }
 }
