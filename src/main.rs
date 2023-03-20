@@ -4,12 +4,9 @@ extern crate lazy_static;
 extern crate log;
 
 use crate::config::AppConfig;
-use crate::http::health;
-use crate::http::proxy;
 use time::{Duration, OffsetDateTime};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
-use warp::Filter;
 
 pub mod config;
 pub mod http;
@@ -18,7 +15,7 @@ pub mod http;
 pub struct Interrupter {
     startup_time: OffsetDateTime,
     sender: Sender<()>,
-    initial_delay: Duration
+    initial_delay: Duration,
 }
 
 impl Interrupter {
@@ -26,7 +23,7 @@ impl Interrupter {
         Interrupter {
             startup_time: OffsetDateTime::now_utc(),
             sender,
-            initial_delay: Duration::minutes(30)
+            initial_delay: Duration::minutes(30),
         }
     }
 
@@ -36,7 +33,10 @@ impl Interrupter {
             info!("sending termination signal");
             self.sender.try_send(()).unwrap();
         } else {
-            info!("termination is delayed as app has started {}min ago", diff.whole_minutes());
+            info!(
+                "termination is delayed as app has started {}min ago",
+                diff.whole_minutes()
+            );
         }
     }
 }
@@ -49,13 +49,9 @@ async fn main() {
     info!("loaded config {:?}", config);
 
     let (tx, mut rx) = mpsc::channel::<()>(1);
-    let interrupter = Interrupter::new(tx);
-
-    let routes = health::routes(interrupter.clone())
-        .or(proxy::routes(interrupter.clone()))
-        .with(warp::log("request_follower"));
 
     info!("starting web-server on port {}", config.server.port);
+    let routes = http::routes(Interrupter::new(tx));
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(
         ([0, 0, 0, 0], config.server.port),
         async move {
