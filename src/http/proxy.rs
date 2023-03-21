@@ -64,17 +64,17 @@ struct ResponseMetadata {
 }
 
 impl ResponseMetadata {
-    fn forbidden(err: String) -> Self {
+    fn forbidden(err: &str) -> Self {
         ResponseMetadata {
-            body: err,
+            body: err.to_string(),
             status: StatusCode::FORBIDDEN,
             headers: HeaderMap::new(),
         }
     }
 
-    fn internal_error(err: String) -> Self {
+    fn internal_error(err: Error) -> Self {
         ResponseMetadata {
-            body: err,
+            body: err.to_string(),
             status: StatusCode::INTERNAL_SERVER_ERROR,
             headers: HeaderMap::new(),
         }
@@ -128,9 +128,7 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
         .and_then(
             |method, path: FullPath, query, headers: HeaderMap, body: Bytes, int: Interrupter| async move {
                 let res = match headers.get(X_REROUTE_TO_HEADER) {
-                    None => {
-                        ResponseMetadata::forbidden(String::from("Missing X-Reroute-To header"))
-                    }
+                    None => ResponseMetadata::forbidden("Missing X-Reroute-To header"),
                     Some(url) => {
                         let req_metadata = RequestMetadata {
                             method,
@@ -141,7 +139,7 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                         };
                         dispatch(int, req_metadata)
                             .await
-                            .unwrap_or_else(|err| ResponseMetadata::internal_error(err.to_string()))
+                            .unwrap_or_else(ResponseMetadata::internal_error)
                     }
                 };
                 Ok::<Response<warp::hyper::Body>, Rejection>(res.to_response())
