@@ -2,6 +2,7 @@ use crate::Interrupter;
 use bytes::Bytes;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use warp::http::{HeaderMap, Method, Response, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
@@ -93,7 +94,7 @@ impl ResponseMetadata {
 }
 
 async fn dispatch(
-    int: Interrupter,
+    int: Arc<Interrupter>,
     req_metadata: RequestMetadata,
 ) -> Result<ResponseMetadata, Error> {
     let res = CLIENT
@@ -108,7 +109,7 @@ async fn dispatch(
     let res_headers = res.headers().clone();
 
     if res_status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
-        int.interrupt();
+        int.interrupt()
     }
 
     res.text().await.map(|res_body| ResponseMetadata {
@@ -118,15 +119,22 @@ async fn dispatch(
     })
 }
 
-pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn routes(
+    int: Arc<Interrupter>,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     warp::method()
         .and(warp::path::full())
         .and(warp::query::<HashMap<String, String>>())
         .and(warp::header::headers_cloned())
         .and(warp::body::bytes())
-        .and(warp::any().map(move || int.clone()))
+        .and(warp::any().map(move || Arc::clone(&int)))
         .and_then(
-            |method, path: FullPath, query, headers: HeaderMap, body: Bytes, int: Interrupter| async move {
+            |method,
+             path: FullPath,
+             query,
+             headers: HeaderMap,
+             body: Bytes,
+             int: Arc<Interrupter>| async move {
                 let res = match headers.get(X_REROUTE_TO_HEADER) {
                     None => ResponseMetadata::forbidden("Missing X-Reroute-To header"),
                     Some(url) => {
@@ -137,7 +145,7 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
                             query_params: query,
                             headers,
                         };
-                        dispatch(int, req_metadata)
+                        dispatch(Arc::clone(&int), req_metadata)
                             .await
                             .unwrap_or_else(ResponseMetadata::internal_error)
                     }

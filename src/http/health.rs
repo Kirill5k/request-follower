@@ -1,6 +1,7 @@
 use crate::Interrupter;
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use time::{Duration, OffsetDateTime};
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
@@ -40,17 +41,19 @@ impl AppStatus {
     }
 }
 
-pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+pub fn routes(
+    int: Arc<Interrupter>,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let endpoint_base = warp::path!("health" / "status")
         .and(warp::path::end())
-        .and(warp::any().map(move || int.clone()));
+        .and(warp::any().map(move || Arc::clone(&int)));
 
     let get_status = endpoint_base
         .clone()
         .and(warp::get())
-        .map(move |interrupter: Interrupter| {
+        .map(move |int: Arc<Interrupter>| {
             warp::reply::with_status(
-                warp::reply::json(&AppStatus::up(interrupter.startup_time)),
+                warp::reply::json(&AppStatus::up(int.startup_time)),
                 StatusCode::OK,
             )
         });
@@ -59,10 +62,10 @@ pub fn routes(int: Interrupter) -> impl Filter<Extract = (impl Reply,), Error = 
         endpoint_base
             .clone()
             .and(warp::delete())
-            .map(move |interrupter: Interrupter| {
-                interrupter.interrupt();
+            .map(move |int: Arc<Interrupter>| {
+                int.interrupt();
                 warp::reply::with_status(
-                    warp::reply::json(&AppStatus::down(interrupter.startup_time)),
+                    warp::reply::json(&AppStatus::down(int.startup_time)),
                     StatusCode::IM_A_TEAPOT,
                 )
             });

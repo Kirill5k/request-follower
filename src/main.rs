@@ -5,6 +5,7 @@ extern crate log;
 
 use crate::config::AppConfig;
 use std::env;
+use std::sync::Arc;
 use time::{Duration, OffsetDateTime};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -55,7 +56,8 @@ async fn main() {
     let (tx, mut rx) = mpsc::channel::<()>(1);
 
     info!("starting web-server on port {}", config.server.port);
-    let routes = http::routes(Interrupter::new(tx));
+    let int = Arc::new(Interrupter::new(tx));
+    let routes = http::routes(int);
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(
         ([0, 0, 0, 0], config.server.port),
         async move {
