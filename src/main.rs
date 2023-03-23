@@ -4,6 +4,7 @@ extern crate lazy_static;
 extern crate log;
 
 use crate::config::AppConfig;
+use std::env;
 use time::{Duration, OffsetDateTime};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -43,6 +44,9 @@ impl Interrupter {
 
 #[tokio::main]
 async fn main() {
+    if env::var_os("RUST_LOG").is_none() {
+        env::set_var("RUST_LOG", "info");
+    }
     env_logger::init();
     info!("starting request-follower app");
     let config = AppConfig::new().unwrap();
