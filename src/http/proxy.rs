@@ -105,17 +105,17 @@ async fn dispatch(
         .send()
         .await?;
 
-    let res_status = res.status();
-    let res_headers = res.headers().clone();
+    let status = res.status();
+    let headers = res.headers().clone();
 
-    if res_status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
+    if status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
         int.interrupt()
     }
 
-    res.text().await.map(|res_body| ResponseMetadata {
-        body: res_body,
-        status: res_status,
-        headers: res_headers,
+    res.text().await.map(|body| ResponseMetadata {
+        body,
+        status,
+        headers,
     })
 }
 
