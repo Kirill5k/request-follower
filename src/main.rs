@@ -50,7 +50,7 @@ async fn main() {
     }
     env_logger::init();
     info!("starting request-follower app");
-    let config = AppConfig::new().unwrap();
+    let config = AppConfig::new().expect("Failed to load config");
     info!("loaded config {:?}", config);
 
     let (tx, mut rx) = mpsc::channel::<()>(1);
