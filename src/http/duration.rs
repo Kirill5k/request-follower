@@ -72,10 +72,26 @@ impl FiniteDuration {
     pub fn to_string(&self) -> String {
         let days = self.days();
         let rem_hours = self - FiniteDuration::from_days(days);
+        let hours = rem_hours.hours();
+        let rem_mins = rem_hours - FiniteDuration::from_hours(hours);
+        let mins = rem_mins.minutes();
+        let rem_secs = rem_mins - FiniteDuration::from_seconds(mins);
+        let seconds = rem_secs.seconds;
 
-        let days_str = if days > 0 { format!("{}d", days) } else { "".to_string() };
-
-        days_str
+        let mut str_repr: String = String::new();
+        if days > 0 {
+            str_repr.push_str(format!("{}d", days).as_str());
+        }
+        if hours > 0 {
+            str_repr.push_str(format!("{}h", hours).as_str());
+        }
+        if mins > 0 {
+            str_repr.push_str(format!("{}m", mins).as_str());
+        }
+        if seconds > 0 {
+            str_repr.push_str(format!("{}s", seconds).as_str());
+        }
+        if str_repr.is_empty() { String::from("0s") } else { str_repr }
     }
 }
 
@@ -104,8 +120,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let fd = FiniteDuration::from_seconds(129601);
-
-        assert_eq!("1d", fd.to_string())
+        assert_eq!("1d12h1s", FiniteDuration::from_seconds(129601).to_string());
+        assert_eq!("0s", FiniteDuration::from_seconds(0).to_string());
     }
 }
