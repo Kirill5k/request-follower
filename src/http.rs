@@ -4,6 +4,7 @@ use warp::{Filter, Rejection, Reply};
 
 pub mod health;
 pub mod proxy;
+pub mod duration;
 
 pub fn routes(
     int: Arc<Interrupter>,
