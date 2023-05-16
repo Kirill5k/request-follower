@@ -2,6 +2,7 @@ use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, ops};
 use time::OffsetDateTime;
+use regex::Regex;
 
 #[derive(Debug)]
 pub struct FiniteDuration {
@@ -56,24 +57,24 @@ impl FiniteDuration {
         FiniteDuration::from_seconds(seconds)
     }
 
-    pub fn days(&self) -> i64 {
+    pub fn as_days(&self) -> i64 {
         self.seconds / 86400
     }
 
-    pub fn hours(&self) -> i64 {
+    pub fn as_hours(&self) -> i64 {
         self.seconds / 3600
     }
 
-    pub fn minutes(&self) -> i64 {
+    pub fn as_minutes(&self) -> i64 {
         self.seconds / 60
     }
 
     pub fn to_string(&self) -> String {
-        let days = self.days();
+        let days = self.as_days();
         let rem_hours = self - FiniteDuration::from_days(days);
-        let hours = rem_hours.hours();
+        let hours = rem_hours.as_hours();
         let rem_mins = rem_hours - FiniteDuration::from_hours(hours);
-        let mins = rem_mins.minutes();
+        let mins = rem_mins.as_minutes();
         let rem_secs = rem_mins - FiniteDuration::from_seconds(mins);
         let seconds = rem_secs.seconds;
 
@@ -129,9 +130,16 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
     where
         E: de::Error,
     {
-        Err(E::custom(format!(
-            "tried to deserialize {v}, however this function is not yet implemented"
-        )))
+        let regex = Regex::new(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?$").unwrap();
+        if v.is_empty() {
+            Err(E::custom("received empty string"))
+        } else if regex.is_match(v) {
+            Err(E::custom("invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"))
+        } else {
+            Err(E::custom(format!(
+                "tried to deserialize {v}, however this function is not yet implemented"
+            )))
+        }
     }
 }
 
@@ -143,9 +151,9 @@ mod tests {
     fn conversions() {
         let fd = FiniteDuration::from_seconds(129601);
 
-        assert_eq!(1, fd.days());
-        assert_eq!(36, fd.hours());
-        assert_eq!(2160, fd.minutes());
+        assert_eq!(1, fd.as_days());
+        assert_eq!(36, fd.as_hours());
+        assert_eq!(2160, fd.as_minutes());
     }
 
     #[test]
