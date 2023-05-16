@@ -1,7 +1,7 @@
 use serde::{Serialize, Serializer, Deserialize, Deserializer};
 use serde::de::{self, Visitor};
 use std::{ops, fmt};
-use time::{Duration, OffsetDateTime};
+use time::{OffsetDateTime};
 
 #[derive(Debug)]
 pub struct FiniteDuration {
@@ -51,13 +51,9 @@ impl FiniteDuration {
         FiniteDuration { seconds }
     }
 
-    pub fn from(d: Duration) -> FiniteDuration {
-        let seconds = d.whole_seconds();
-        FiniteDuration { seconds }
-    }
-
     pub fn between_now_and(other_date: OffsetDateTime) -> FiniteDuration {
-        FiniteDuration::from(OffsetDateTime::now_utc() - other_date)
+        let seconds = (OffsetDateTime::now_utc() - other_date).whole_seconds();
+        FiniteDuration::from_seconds(seconds)
     }
 
     pub fn days(&self) -> i64 {
@@ -104,8 +100,8 @@ impl FiniteDuration {
 
 impl Serialize for FiniteDuration {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
+        where
+            S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
     }
@@ -142,13 +138,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn from_duration() {
-        let duration = Duration::new(129601, 0);
-        let finite_duration = FiniteDuration::from(duration);
+    fn conversions() {
+        let fd = FiniteDuration::from_seconds(129601);
 
-        assert_eq!(1, finite_duration.days());
-        assert_eq!(36, finite_duration.hours());
-        assert_eq!(2160, finite_duration.minutes());
+        assert_eq!(1, fd.days());
+        assert_eq!(36, fd.hours());
+        assert_eq!(2160, fd.minutes());
     }
 
     #[test]
@@ -162,6 +157,8 @@ mod tests {
 
     #[test]
     fn to_string() {
+        assert_eq!("2d", FiniteDuration::from_days(2).to_string());
+        assert_eq!("1d12h", FiniteDuration::from_hours(36).to_string());
         assert_eq!("1d12h1s", FiniteDuration::from_seconds(129601).to_string());
         assert_eq!("0s", FiniteDuration::from_seconds(0).to_string());
     }
