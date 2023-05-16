@@ -1,9 +1,9 @@
-use crate::Interrupter;
 use crate::duration::FiniteDuration;
+use crate::Interrupter;
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use time::{OffsetDateTime};
+use time::OffsetDateTime;
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 

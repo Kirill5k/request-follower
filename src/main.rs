@@ -11,8 +11,8 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
 pub mod config;
-pub mod http;
 pub mod duration;
+pub mod http;
 
 #[derive(Clone, Debug)]
 pub struct Interrupter {

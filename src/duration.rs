@@ -1,7 +1,7 @@
-use serde::{Serialize, Serializer, Deserialize, Deserializer};
 use serde::de::{self, Visitor};
-use std::{ops, fmt};
-use time::{OffsetDateTime};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::{fmt, ops};
+use time::OffsetDateTime;
 
 #[derive(Debug)]
 pub struct FiniteDuration {
@@ -100,8 +100,8 @@ impl FiniteDuration {
 
 impl Serialize for FiniteDuration {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(self.to_string().as_str())
     }
@@ -109,8 +109,8 @@ impl Serialize for FiniteDuration {
 
 impl<'de> Deserialize<'de> for FiniteDuration {
     fn deserialize<D>(deserializer: D) -> Result<FiniteDuration, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_string(FiniteDurationVisitor)
     }
@@ -126,10 +126,12 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-        where
-            E: de::Error,
+    where
+        E: de::Error,
     {
-        Err(E::custom(format!("tried to deserialize {v}, however this function is not yet implemented")))
+        Err(E::custom(format!(
+            "tried to deserialize {v}, however this function is not yet implemented"
+        )))
     }
 }
 
