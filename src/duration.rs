@@ -151,9 +151,9 @@ mod tests {
     fn conversions() {
         let fd = FiniteDuration::from_seconds(129601);
 
-        assert_eq!(1, fd.as_days());
-        assert_eq!(36, fd.as_hours());
-        assert_eq!(2160, fd.as_minutes());
+        assert_eq!(fd.as_days(), 1);
+        assert_eq!(fd.as_hours(), 36);
+        assert_eq!(fd.as_minutes(), 2160);
     }
 
     #[test]
@@ -162,14 +162,14 @@ mod tests {
         let fd_2 = FiniteDuration::from_seconds(3000);
         let result = fd_1 - fd_2;
 
-        assert_eq!(160, result.seconds)
+        assert_eq!(result.seconds, 160)
     }
 
     #[test]
     fn to_string() {
-        assert_eq!("2d", FiniteDuration::from_days(2).to_string());
-        assert_eq!("1d12h", FiniteDuration::from_hours(36).to_string());
-        assert_eq!("1d12h1s", FiniteDuration::from_seconds(129601).to_string());
-        assert_eq!("0s", FiniteDuration::from_seconds(0).to_string());
+        assert_eq!(FiniteDuration::from_days(2).to_string(), "2d");
+        assert_eq!(FiniteDuration::from_hours(36).to_string(), "1d12h");
+        assert_eq!(FiniteDuration::from_seconds(129601).to_string(), "1d12h1s");
+        assert_eq!(FiniteDuration::from_seconds(0).to_string(), "0s");
     }
 }
