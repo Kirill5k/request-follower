@@ -1,10 +1,10 @@
-use regex::Regex;
+use regex::{Regex};
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, ops};
 use time::OffsetDateTime;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FiniteDuration {
     seconds: i64,
 }
@@ -119,6 +119,11 @@ impl<'de> Deserialize<'de> for FiniteDuration {
 
 struct FiniteDurationVisitor;
 
+lazy_static! {
+    static ref STRING_REPR_REGEX: Regex = Regex::new(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?$").unwrap();
+    static ref EXTRACT_DAYS_REGEX: Regex = Regex::new(r"^(\d+)d.*$").unwrap();
+}
+
 impl<'de> Visitor<'de> for FiniteDurationVisitor {
     type Value = FiniteDuration;
 
@@ -130,17 +135,19 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
     where
         E: de::Error,
     {
-        let regex = Regex::new(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?$").unwrap();
         if v.is_empty() {
             Err(E::custom("received empty string"))
-        } else if !regex.is_match(v) {
+        } else if !STRING_REPR_REGEX.is_match(v) {
             Err(E::custom(
                 "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs",
             ))
         } else {
-            Err(E::custom(format!(
-                "tried to deserialize {v}, however this function is not yet implemented"
-            )))
+            let n_days = match EXTRACT_DAYS_REGEX.captures(v) {
+                None => 0,
+                Some(d) => d.get(1).unwrap().as_str().parse().unwrap()
+            };
+
+            Ok(FiniteDuration::from_seconds(n_days * 86400))
         }
     }
 }
@@ -196,5 +203,13 @@ mod tests {
             error.to_string(),
             "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"
         );
+    }
+
+
+    #[test]
+    fn deserialize_days() {
+        let deserializer: StrDeserializer<ValueError> = "10d".into_deserializer();
+        let result = deserializer.deserialize_string(FiniteDurationVisitor).unwrap();
+        assert_eq!(result, FiniteDuration::from_days(10));
     }
 }
