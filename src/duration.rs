@@ -1,9 +1,8 @@
-use serde::de::{self, Visitor, IntoDeserializer};
-use serde::de::value::{StrDeserializer, Error as ValueError};
+use regex::Regex;
+use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, ops};
 use time::OffsetDateTime;
-use regex::Regex;
 
 #[derive(Debug)]
 pub struct FiniteDuration {
@@ -135,7 +134,9 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
         if v.is_empty() {
             Err(E::custom("received empty string"))
         } else if !regex.is_match(v) {
-            Err(E::custom("invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"))
+            Err(E::custom(
+                "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs",
+            ))
         } else {
             Err(E::custom(format!(
                 "tried to deserialize {v}, however this function is not yet implemented"
@@ -147,6 +148,8 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::de::value::{Error as ValueError, StrDeserializer};
+    use serde::de::IntoDeserializer;
 
     #[test]
     fn conversions() {
@@ -177,14 +180,21 @@ mod tests {
     #[test]
     fn deserialize_empty_string() {
         let deserializer: StrDeserializer<ValueError> = "".into_deserializer();
-        let error = deserializer.deserialize_string(FiniteDurationVisitor).unwrap_err();
+        let error = deserializer
+            .deserialize_string(FiniteDurationVisitor)
+            .unwrap_err();
         assert_eq!(error.to_string(), "received empty string");
     }
 
     #[test]
     fn deserialize_invalid_string_repr() {
         let deserializer: StrDeserializer<ValueError> = "foo".into_deserializer();
-        let error = deserializer.deserialize_string(FiniteDurationVisitor).unwrap_err();
-        assert_eq!(error.to_string(), "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs");
+        let error = deserializer
+            .deserialize_string(FiniteDurationVisitor)
+            .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"
+        );
     }
 }
