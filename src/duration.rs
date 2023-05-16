@@ -1,4 +1,5 @@
-use serde::de::{self, Visitor};
+use serde::de::{self, Visitor, IntoDeserializer};
+use serde::de::value::{StrDeserializer, Error as ValueError};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, ops};
 use time::OffsetDateTime;
@@ -133,7 +134,7 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
         let regex = Regex::new(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?$").unwrap();
         if v.is_empty() {
             Err(E::custom("received empty string"))
-        } else if regex.is_match(v) {
+        } else if !regex.is_match(v) {
             Err(E::custom("invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"))
         } else {
             Err(E::custom(format!(
@@ -171,5 +172,19 @@ mod tests {
         assert_eq!(FiniteDuration::from_hours(36).to_string(), "1d12h");
         assert_eq!(FiniteDuration::from_seconds(129601).to_string(), "1d12h1s");
         assert_eq!(FiniteDuration::from_seconds(0).to_string(), "0s");
+    }
+
+    #[test]
+    fn deserialize_empty_string() {
+        let deserializer: StrDeserializer<ValueError> = "".into_deserializer();
+        let error = deserializer.deserialize_string(FiniteDurationVisitor).unwrap_err();
+        assert_eq!(error.to_string(), "received empty string");
+    }
+
+    #[test]
+    fn deserialize_invalid_string_repr() {
+        let deserializer: StrDeserializer<ValueError> = "foo".into_deserializer();
+        let error = deserializer.deserialize_string(FiniteDurationVisitor).unwrap_err();
+        assert_eq!(error.to_string(), "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs");
     }
 }
