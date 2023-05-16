@@ -1,8 +1,9 @@
-use time::{Duration, OffsetDateTime};
+use serde::{Serialize, Serializer};
 use std::ops;
+use time::{Duration, OffsetDateTime};
 
 pub struct FiniteDuration {
-    seconds: i64
+    seconds: i64,
 }
 
 impl ops::Sub<FiniteDuration> for &FiniteDuration {
@@ -10,7 +11,7 @@ impl ops::Sub<FiniteDuration> for &FiniteDuration {
 
     fn sub(self, other: FiniteDuration) -> Self::Output {
         FiniteDuration {
-            seconds: (self.seconds - other.seconds).abs()
+            seconds: (self.seconds - other.seconds).abs(),
         }
     }
 }
@@ -20,7 +21,7 @@ impl ops::Sub<FiniteDuration> for FiniteDuration {
 
     fn sub(self, other: FiniteDuration) -> Self::Output {
         FiniteDuration {
-            seconds: (self.seconds - other.seconds).abs()
+            seconds: (self.seconds - other.seconds).abs(),
         }
     }
 }
@@ -28,19 +29,19 @@ impl ops::Sub<FiniteDuration> for FiniteDuration {
 impl FiniteDuration {
     pub fn from_days(days: i64) -> FiniteDuration {
         FiniteDuration {
-            seconds: days * 3600 * 24
+            seconds: days * 3600 * 24,
         }
     }
 
     pub fn from_hours(hours: i64) -> FiniteDuration {
         FiniteDuration {
-            seconds: hours * 3600
+            seconds: hours * 3600,
         }
     }
 
     pub fn from_minutes(minutes: i64) -> FiniteDuration {
         FiniteDuration {
-            seconds: minutes * 60
+            seconds: minutes * 60,
         }
     }
 
@@ -91,7 +92,20 @@ impl FiniteDuration {
         if seconds > 0 {
             str_repr.push_str(format!("{}s", seconds).as_str());
         }
-        if str_repr.is_empty() { String::from("0s") } else { str_repr }
+        if str_repr.is_empty() {
+            String::from("0s")
+        } else {
+            str_repr
+        }
+    }
+}
+
+impl Serialize for FiniteDuration {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
     }
 }
 

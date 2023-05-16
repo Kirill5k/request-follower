@@ -2,9 +2,9 @@ use crate::Interrupter;
 use std::sync::Arc;
 use warp::{Filter, Rejection, Reply};
 
+pub mod duration;
 pub mod health;
 pub mod proxy;
-pub mod duration;
 
 pub fn routes(
     int: Arc<Interrupter>,
