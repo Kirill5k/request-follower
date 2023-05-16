@@ -1,4 +1,5 @@
 use crate::Interrupter;
+use crate::duration::FiniteDuration;
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -17,7 +18,7 @@ struct AppStatus {
     status: String,
     #[serde(with = "time::serde::rfc3339")]
     startup_time: OffsetDateTime,
-    up_time: Duration,
+    up_time: FiniteDuration,
     server_ip_address: String,
 }
 

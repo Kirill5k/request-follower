@@ -2,7 +2,6 @@ use crate::Interrupter;
 use std::sync::Arc;
 use warp::{Filter, Rejection, Reply};
 
-pub mod duration;
 pub mod health;
 pub mod proxy;
 
