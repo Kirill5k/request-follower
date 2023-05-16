@@ -3,7 +3,7 @@ use crate::duration::FiniteDuration;
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use time::{Duration, OffsetDateTime};
+use time::{OffsetDateTime};
 use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
@@ -27,7 +27,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("up"),
             startup_time,
-            up_time: OffsetDateTime::now_utc() - startup_time,
+            up_time: FiniteDuration::between_now_and(startup_time),
             server_ip_address: server_ip_address(),
         }
     }
@@ -36,7 +36,7 @@ impl AppStatus {
         AppStatus {
             status: String::from("down"),
             startup_time,
-            up_time: OffsetDateTime::now_utc() - startup_time,
+            up_time: FiniteDuration::between_now_and(startup_time),
             server_ip_address: server_ip_address(),
         }
     }
