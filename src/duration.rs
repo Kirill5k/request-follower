@@ -121,7 +121,7 @@ struct FiniteDurationVisitor;
 
 lazy_static! {
     static ref STRING_REPR_REGEX: Regex = Regex::new(r"^(\d+d)?(\d+h)?(\d+m)?(\d+s)?$").unwrap();
-    static ref EXTRACT_DAYS_REGEX: Regex = Regex::new(r"^(\d+)d.*$").unwrap();
+    static ref EXTRACT_DATA_REGEX: Regex = Regex::new(r"(?x)((?P<day>\d+)d)?((?P<hour>\d+)h)?((?P<min>\d+)m)?((?P<sec>\d+)s)?").unwrap();
 }
 
 impl<'de> Visitor<'de> for FiniteDurationVisitor {
@@ -142,12 +142,35 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
                 "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs",
             ))
         } else {
-            let n_days = match EXTRACT_DAYS_REGEX.captures(v) {
+            let duration_seconds = match EXTRACT_DATA_REGEX.captures(v) {
                 None => 0,
-                Some(d) => d.get(1).unwrap().as_str().parse().unwrap()
+                Some(extracted_data) => {
+                    let n_days = match extracted_data.name("day") {
+                        None => 0,
+                        Some(day) => day.as_str().parse().unwrap()
+                    };
+
+                    let n_hours = match extracted_data.name("hour") {
+                        None => 0,
+                        Some(hour) => hour.as_str().parse().unwrap()
+                    };
+
+                    let n_minutes = match extracted_data.name("min") {
+                        None => 0,
+                        Some(min) => min.as_str().parse().unwrap()
+                    };
+
+                    let n_seconds = match extracted_data.name("sec") {
+                        None => 0,
+                        Some(sec) => sec.as_str().parse().unwrap()
+                    };
+
+
+                    n_days * 86400 + n_hours * 3600 + n_minutes * 60 + n_seconds
+                }
             };
 
-            Ok(FiniteDuration::from_seconds(n_days * 86400))
+            Ok(FiniteDuration::from_seconds(duration_seconds))
         }
     }
 }
@@ -211,5 +234,19 @@ mod tests {
         let deserializer: StrDeserializer<ValueError> = "10d".into_deserializer();
         let result = deserializer.deserialize_string(FiniteDurationVisitor).unwrap();
         assert_eq!(result, FiniteDuration::from_days(10));
+    }
+
+    #[test]
+    fn deserialize_hours() {
+        let deserializer: StrDeserializer<ValueError> = "2h".into_deserializer();
+        let result = deserializer.deserialize_string(FiniteDurationVisitor).unwrap();
+        assert_eq!(result, FiniteDuration::from_hours(2));
+    }
+
+    #[test]
+    fn deserialize_full_string_repr() {
+        let deserializer: StrDeserializer<ValueError> = "1d12h1m1s".into_deserializer();
+        let result = deserializer.deserialize_string(FiniteDurationVisitor).unwrap();
+        assert_eq!(result, FiniteDuration::from_seconds(129661));
     }
 }
