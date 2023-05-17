@@ -75,7 +75,7 @@ impl FiniteDuration {
         let hours = rem_hours.as_hours();
         let rem_mins = rem_hours - FiniteDuration::from_hours(hours);
         let mins = rem_mins.as_minutes();
-        let rem_secs = rem_mins - FiniteDuration::from_seconds(mins);
+        let rem_secs = rem_mins - FiniteDuration::from_minutes(mins);
         let seconds = rem_secs.seconds;
 
         let mut str_repr: String = String::new();
@@ -186,7 +186,7 @@ mod tests {
     fn to_string() {
         assert_eq!(FiniteDuration::from_days(2).to_string(), "2d");
         assert_eq!(FiniteDuration::from_hours(36).to_string(), "1d12h");
-        assert_eq!(FiniteDuration::from_seconds(129601).to_string(), "1d12h1s");
+        assert_eq!(FiniteDuration::from_seconds(129661).to_string(), "1d12h1m1s");
         assert_eq!(FiniteDuration::from_seconds(0).to_string(), "0s");
     }
 
