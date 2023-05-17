@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Match, Regex};
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, ops};
@@ -144,28 +144,14 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
                 "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs",
             ))
         } else {
-            let duration_seconds = match EXTRACT_DATA_REGEX.captures(v) {
-                None => 0,
-                Some(extracted_data) => {
-                    let n_days = extracted_data
-                        .name("day")
-                        .map_or(0, |d| d.as_str().parse().unwrap());
-
-                    let n_hours = extracted_data
-                        .name("hour")
-                        .map_or(0, |h| h.as_str().parse().unwrap());
-
-                    let n_minutes = extracted_data
-                        .name("min")
-                        .map_or(0, |m| m.as_str().parse().unwrap());
-
-                    let n_seconds = extracted_data
-                        .name("sec")
-                        .map_or(0, |s| s.as_str().parse().unwrap());
-
-                    n_days * 86400 + n_hours * 3600 + n_minutes * 60 + n_seconds
-                }
-            };
+            let to_number = |n: Match| n.as_str().parse().unwrap();
+            let duration_seconds = EXTRACT_DATA_REGEX.captures(v).map_or(0, |extracted_data| {
+                let n_days = extracted_data.name("day").map_or(0, to_number);
+                let n_hours = extracted_data.name("hour").map_or(0, to_number);
+                let n_minutes = extracted_data.name("min").map_or(0, to_number);
+                let n_seconds = extracted_data.name("sec").map_or(0, to_number);
+                n_days * 86400 + n_hours * 3600 + n_minutes * 60 + n_seconds
+            });
 
             Ok(FiniteDuration::from_seconds(duration_seconds))
         }
