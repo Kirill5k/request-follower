@@ -69,6 +69,10 @@ impl FiniteDuration {
         self.seconds / 60
     }
 
+    pub fn as_seconds(&self) -> i64 {
+        self.seconds
+    }
+
     pub fn to_string(&self) -> String {
         let days = self.as_days();
         let rem_hours = self - FiniteDuration::from_days(days);
@@ -171,6 +175,7 @@ mod tests {
         assert_eq!(fd.as_days(), 1);
         assert_eq!(fd.as_hours(), 36);
         assert_eq!(fd.as_minutes(), 2160);
+        assert_eq!(fd.as_seconds(), 129601);
     }
 
     #[test]
@@ -188,6 +193,7 @@ mod tests {
         assert_eq!(FiniteDuration::from_hours(36).to_string(), "1d12h");
         assert_eq!(FiniteDuration::from_seconds(129661).to_string(), "1d12h1m1s");
         assert_eq!(FiniteDuration::from_seconds(0).to_string(), "0s");
+        assert_eq!(FiniteDuration::from_days(0).to_string(), "0s");
     }
 
     #[test]
