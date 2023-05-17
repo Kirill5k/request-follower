@@ -147,22 +147,22 @@ impl<'de> Visitor<'de> for FiniteDurationVisitor {
             let duration_seconds = match EXTRACT_DATA_REGEX.captures(v) {
                 None => 0,
                 Some(extracted_data) => {
-                    let n_days = match extracted_data.name("day") {
-                        None => 0,
-                        Some(day) => day.as_str().parse().unwrap(),
-                    };
-                    let n_hours = match extracted_data.name("hour") {
-                        None => 0,
-                        Some(hour) => hour.as_str().parse().unwrap(),
-                    };
-                    let n_minutes = match extracted_data.name("min") {
-                        None => 0,
-                        Some(min) => min.as_str().parse().unwrap(),
-                    };
-                    let n_seconds = match extracted_data.name("sec") {
-                        None => 0,
-                        Some(sec) => sec.as_str().parse().unwrap(),
-                    };
+                    let n_days = extracted_data
+                        .name("day")
+                        .map_or(0, |d| d.as_str().parse().unwrap());
+
+                    let n_hours = extracted_data
+                        .name("hour")
+                        .map_or(0, |h| h.as_str().parse().unwrap());
+
+                    let n_minutes = extracted_data
+                        .name("min")
+                        .map_or(0, |m| m.as_str().parse().unwrap());
+
+                    let n_seconds = extracted_data
+                        .name("sec")
+                        .map_or(0, |s| s.as_str().parse().unwrap());
+
                     n_days * 86400 + n_hours * 3600 + n_minutes * 60 + n_seconds
                 }
             };
@@ -216,6 +216,18 @@ mod tests {
     #[test]
     fn deserialize_invalid_string_repr() {
         let deserializer: StrDeserializer<ValueError> = "foo".into_deserializer();
+        let error = deserializer
+            .deserialize_string(FiniteDurationVisitor)
+            .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "invalid string repr of FiniteDuration. expected format is XXdXXhXXmXXs"
+        );
+    }
+
+    #[test]
+    fn deserialize_negative_number() {
+        let deserializer: StrDeserializer<ValueError> = "-10d".into_deserializer();
         let error = deserializer
             .deserialize_string(FiniteDurationVisitor)
             .unwrap_err();
