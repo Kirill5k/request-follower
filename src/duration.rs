@@ -191,7 +191,10 @@ mod tests {
     fn to_string() {
         assert_eq!(FiniteDuration::from_days(2).to_string(), "2d");
         assert_eq!(FiniteDuration::from_hours(36).to_string(), "1d12h");
-        assert_eq!(FiniteDuration::from_seconds(129661).to_string(), "1d12h1m1s");
+        assert_eq!(
+            FiniteDuration::from_seconds(129661).to_string(),
+            "1d12h1m1s"
+        );
         assert_eq!(FiniteDuration::from_seconds(0).to_string(), "0s");
         assert_eq!(FiniteDuration::from_days(0).to_string(), "0s");
     }

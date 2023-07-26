@@ -64,11 +64,13 @@ pub fn routes(
             .clone()
             .and(warp::delete())
             .map(move |int: Arc<Interrupter>| {
-                int.interrupt();
-                warp::reply::with_status(
-                    warp::reply::json(&AppStatus::down(int.startup_time)),
-                    StatusCode::IM_A_TEAPOT,
-                )
+                let interrupted = int.interrupt();
+                let response = if interrupted {
+                    AppStatus::down(int.startup_time)
+                } else {
+                    AppStatus::up(int.startup_time)
+                };
+                warp::reply::with_status(warp::reply::json(&response), StatusCode::IM_A_TEAPOT)
             });
 
     get_status.or(interrupt_app)

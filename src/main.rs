@@ -30,16 +30,18 @@ impl Interrupter {
         }
     }
 
-    fn interrupt(&self) {
+    fn interrupt(&self) -> bool {
         let diff = OffsetDateTime::now_utc() - self.startup_time;
         if diff > self.initial_delay {
             info!("sending termination signal");
             self.sender.try_send(()).unwrap();
+            true
         } else {
             info!(
                 "termination is delayed as app has started {}min ago",
                 diff.whole_minutes()
             );
+            false
         }
     }
 }

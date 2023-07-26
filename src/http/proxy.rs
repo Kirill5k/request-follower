@@ -109,7 +109,7 @@ async fn dispatch(
     let headers = res.headers().clone();
 
     if status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
-        int.interrupt()
+        int.interrupt();
     }
 
     res.text().await.map(|body| ResponseMetadata {
