@@ -3,7 +3,6 @@ use bytes::Bytes;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use std::str::from_utf8;
 use warp::http::{HeaderMap, Method, Response, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
