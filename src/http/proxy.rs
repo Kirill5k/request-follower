@@ -2,8 +2,8 @@ use crate::Interrupter;
 use bytes::Bytes;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
-use std::str::from_utf8;
 use std::sync::Arc;
+use std::str::from_utf8;
 use warp::http::{HeaderMap, Method, Response, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
@@ -113,14 +113,11 @@ async fn dispatch(
         int.interrupt();
     }
 
-    res.bytes()
-        .await
-        .map(|b| from_utf8(b.as_ref()).unwrap().to_string())
-        .map(|body| ResponseMetadata {
-            body,
-            status,
-            headers,
-        })
+    res.text().await.map(|body| ResponseMetadata {
+        body,
+        status,
+        headers,
+    })
 }
 
 pub fn routes(
