@@ -83,9 +83,9 @@ impl ResponseMetadata {
 
     fn to_response(&self) -> Response<warp::hyper::Body> {
         let mut res = Response::builder();
-        for (k, v) in self.headers.iter() {
-            res = res.header(k, v);
-        }
+        // for (k, v) in self.headers.iter() {
+        //     res = res.header(k, v);
+        // }
 
         res.status(&self.status)
             .body(self.body.clone().into())
@@ -107,6 +107,8 @@ async fn dispatch(
 
     let status = res.status();
     let headers = res.headers().clone();
+
+    info!("response headers {:?}", headers);
 
     if status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
         int.interrupt();
