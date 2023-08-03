@@ -108,8 +108,6 @@ async fn dispatch(
     let status = res.status();
     let headers = res.headers().clone();
 
-    info!("response headers {:?}", headers);
-
     if status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
         int.interrupt();
     }
@@ -152,6 +150,8 @@ pub fn routes(
                             .unwrap_or_else(ResponseMetadata::internal_error)
                     }
                 };
+                info!("response {:?}", res.to_response());
+                //Ok::<WithStatus<std::string::String>, Rejection>(warp::reply::with_status(res.body, res.status))
                 Ok::<Response<warp::hyper::Body>, Rejection>(res.to_response())
             },
         )
