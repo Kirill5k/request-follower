@@ -83,9 +83,9 @@ impl ResponseMetadata {
 
     fn to_response(&self) -> Response<warp::hyper::Body> {
         let mut res = Response::builder();
-        // for (k, v) in self.headers.iter() {
-        //     res = res.header(k, v);
-        // }
+        for (k, v) in self.headers.iter() {
+            res = res.header(k, v);
+        }
 
         res.status(&self.status)
             .body(self.body.clone().into())
