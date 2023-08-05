@@ -18,6 +18,7 @@ lazy_static! {
             X_REROUTE_TO_HEADER,
             X_ACCEPT_ENCODING,
             X_RELOAD_ON_403,
+            "accept-encoding",
             "cdn-loop",
             "cf-connecting-ip",
             "cf-ew-via",
