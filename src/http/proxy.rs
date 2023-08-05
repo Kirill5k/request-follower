@@ -61,7 +61,7 @@ impl RequestMetadata {
         if let Some(hv) = self.headers.get(X_ACCEPT_ENCODING) {
             headers.insert(reqwest::header::ACCEPT_ENCODING, hv.into());
         }
-        info!("sanitised headers {:?}", self.headers);
+        info!("sanitised headers {:?}", headers);
         headers
     }
 
