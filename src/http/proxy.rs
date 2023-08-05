@@ -42,6 +42,7 @@ struct RequestMetadata {
 impl RequestMetadata {
     fn sanitised_headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
+        info!("request headers {:?}", self.headers);
         for (h, v) in self.headers.iter() {
             if !HEADERS_TO_REMOVE.contains(h.as_str()) {
                 headers.insert(&*h, v.into());
