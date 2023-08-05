@@ -18,6 +18,15 @@ lazy_static! {
             X_REROUTE_TO_HEADER,
             X_ACCEPT_ENCODING,
             X_RELOAD_ON_403,
+            "cdn-loop",
+            "cf-connecting-ip",
+            "cf-ew-via",
+            "cf-ipcountry",
+            "cf-ray",
+            "cf-visitor",
+            "cf-worker",
+            "render-proxy-ttl",
+            "true-client-ip",
             "host",
             "x-proxied",
             "x-real-ip",
@@ -27,6 +36,7 @@ lazy_static! {
             "x-forwarded-scheme",
             "x-forwarded-host",
             "x-forwarded-proto",
+            "x-request-start",
         ])
     };
 }
@@ -51,6 +61,7 @@ impl RequestMetadata {
         if let Some(hv) = self.headers.get(X_ACCEPT_ENCODING) {
             headers.insert(reqwest::header::ACCEPT_ENCODING, hv.into());
         }
+        info!("sanitised headers {:?}", self.headers);
         headers
     }
 
