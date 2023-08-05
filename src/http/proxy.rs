@@ -53,7 +53,6 @@ struct RequestMetadata {
 impl RequestMetadata {
     fn sanitised_headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        info!("request headers {:?}", self.headers);
         for (h, v) in self.headers.iter() {
             if !HEADERS_TO_REMOVE.contains(h.as_str()) {
                 headers.insert(&*h, v.into());
@@ -62,7 +61,6 @@ impl RequestMetadata {
         if let Some(hv) = self.headers.get(X_ACCEPT_ENCODING) {
             headers.insert(reqwest::header::ACCEPT_ENCODING, hv.into());
         }
-        info!("sanitised headers {:?}", headers);
         headers
     }
 
@@ -163,7 +161,6 @@ pub fn routes(
                             .unwrap_or_else(ResponseMetadata::internal_error)
                     }
                 };
-                info!("response {:?}", res.to_response());
                 //Ok::<WithStatus<std::string::String>, Rejection>(warp::reply::with_status(res.body, res.status))
                 Ok::<Response<warp::hyper::Body>, Rejection>(res.to_response())
             },
