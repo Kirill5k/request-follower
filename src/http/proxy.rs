@@ -54,7 +54,7 @@ impl RequestMetadata {
         let mut headers = HeaderMap::new();
         info!("request headers {:?}", self.headers);
         for (h, v) in self.headers.iter() {
-            if !HEADERS_TO_REMOVE.contains(h.to_lowercase()) {
+            if !HEADERS_TO_REMOVE.contains(h.as_str()) {
                 headers.insert(&*h, v.into());
             }
         }
