@@ -161,7 +161,6 @@ pub fn routes(
                             .unwrap_or_else(ResponseMetadata::internal_error)
                     }
                 };
-                //Ok::<WithStatus<std::string::String>, Rejection>(warp::reply::with_status(res.body, res.status))
                 Ok::<Response<warp::hyper::Body>, Rejection>(res.to_response())
             },
         )
