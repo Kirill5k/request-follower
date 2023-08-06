@@ -142,7 +142,7 @@ pub fn routes(
         .and_then(
             |method,
              path: FullPath,
-             query,
+             query_params,
              headers: HeaderMap,
              body: Bytes,
              int: Arc<Interrupter>| async move {
@@ -153,7 +153,7 @@ pub fn routes(
                             method,
                             url: url.to_str().unwrap().to_owned() + path.as_str(),
                             body: String::from_utf8(body.to_vec()).unwrap_or("".to_string()),
-                            query_params: query,
+                            query_params,
                             headers,
                         };
                         dispatch(Arc::clone(&int), req_metadata)
