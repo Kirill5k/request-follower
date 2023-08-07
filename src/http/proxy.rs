@@ -1,9 +1,10 @@
 use crate::Interrupter;
 use bytes::Bytes;
+use reqwest::header;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use warp::http::{HeaderMap, Method, Response, StatusCode};
+use warp::http::{HeaderMap, HeaderValue, Method, Response, StatusCode};
 use warp::path::FullPath;
 use warp::{Filter, Rejection, Reply};
 
@@ -58,9 +59,12 @@ impl RequestMetadata {
                 headers.insert(&*h, v.into());
             }
         }
-        if let Some(hv) = self.headers.get(X_ACCEPT_ENCODING) {
-            headers.insert(reqwest::header::ACCEPT_ENCODING, hv.into());
-        }
+
+        match self.headers.get(X_ACCEPT_ENCODING) {
+            Some(hv) => headers.insert(header::ACCEPT_ENCODING, hv.into()),
+            None => headers.insert(header::ACCEPT_ENCODING, HeaderValue::from_str("*").unwrap()),
+        };
+
         headers
     }
 
