@@ -39,6 +39,18 @@ lazy_static! {
             "x-forwarded-host",
             "x-forwarded-proto",
             "x-request-start",
+            "x-forwarded-ssl",
+            "X-Scheme",
+            "x-request-start",
+            "fly-client-ip",
+            "fly-forwarded-proto",
+            "fly-forwarded-ssl",
+            "fly-forwarded-port",
+            "fly-region",
+            "fly-request-id",
+            "fly-tracestate",
+            "fly-traceparent",
+            "via",
         ])
     };
 }

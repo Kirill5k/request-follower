@@ -1,4 +1,5 @@
 # fly.toml file generated for reqfol on 2023-03-08T09:29:56Z
+# fly deploy --strategy immediate --no-cache
 
 app = "reqfol"
 kill_signal = "SIGINT"
