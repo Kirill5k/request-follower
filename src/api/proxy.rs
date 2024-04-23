@@ -98,20 +98,22 @@ impl ResponseMetadata {
 
 async fn dispatch(
     int: Arc<Interrupter>,
-    req_metadata: RequestMetadata,
+    req: RequestMetadata,
 ) -> Result<ResponseMetadata, Error> {
     let res = CLIENT
-        .request(req_metadata.method.clone(), &req_metadata.url)
-        .query(&Vec::from_iter(req_metadata.query_params.iter()))
-        .body(req_metadata.body.clone())
-        .headers(req_metadata.sanitised_headers())
+        .request(req.method.clone(), &req.url)
+        .query(&Vec::from_iter(req.query_params.iter()))
+        .body(req.body.clone())
+        .headers(req.sanitised_headers())
         .send()
         .await?;
 
     let status = res.status();
     let headers = res.headers().clone();
 
-    if status == StatusCode::FORBIDDEN && req_metadata.reload_on_403() {
+    info!("Request {:?} {:?} {:?} Response {:?}", req.method, req.url, req.sanitised_headers(), status);
+
+    if status == StatusCode::FORBIDDEN && req.reload_on_403() {
         int.interrupt();
     }
 

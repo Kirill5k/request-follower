@@ -10,5 +10,4 @@ pub fn routes(
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     health::routes(Arc::clone(&int))
         .or(proxy::routes(Arc::clone(&int)))
-        .with(warp::log("request_follower"))
 }
