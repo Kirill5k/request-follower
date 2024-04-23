@@ -1,5 +1,6 @@
 use crate::Interrupter;
 use bytes::Bytes;
+use regex::Regex;
 use reqwest::header;
 use reqwest::{Client, Error};
 use std::collections::{HashMap, HashSet};
@@ -14,42 +15,14 @@ const X_RELOAD_ON_403: &str = "x-reload-on-403";
 
 lazy_static! {
     static ref CLIENT: Client = Client::new();
+    static ref INVALID_HEADERS_REGEX: Regex = Regex::new(r"^(x|cf|fly)-.*$").unwrap();
     static ref HEADERS_TO_REMOVE: HashSet<&'static str> = {
         HashSet::from([
-            X_REROUTE_TO_HEADER,
-            X_ACCEPT_ENCODING,
-            X_RELOAD_ON_403,
             "accept-encoding",
             "cdn-loop",
-            "cf-connecting-ip",
-            "cf-ew-via",
-            "cf-ipcountry",
-            "cf-ray",
-            "cf-visitor",
-            "cf-worker",
             "render-proxy-ttl",
             "true-client-ip",
             "host",
-            "x-proxied",
-            "x-real-ip",
-            "x-scheme",
-            "x-forwarded-for",
-            "x-forwarded-port",
-            "x-forwarded-scheme",
-            "x-forwarded-host",
-            "x-forwarded-proto",
-            "x-request-start",
-            "x-forwarded-ssl",
-            "X-Scheme",
-            "x-request-start",
-            "fly-client-ip",
-            "fly-forwarded-proto",
-            "fly-forwarded-ssl",
-            "fly-forwarded-port",
-            "fly-region",
-            "fly-request-id",
-            "fly-tracestate",
-            "fly-traceparent",
             "via",
         ])
     };
@@ -67,7 +40,10 @@ impl RequestMetadata {
     fn sanitised_headers(&self) -> HeaderMap {
         let mut headers = HeaderMap::new();
         for (h, v) in self.headers.iter() {
-            if !HEADERS_TO_REMOVE.contains(h.as_str()) {
+            let header = h.to_string().to_lowercase();
+            if !INVALID_HEADERS_REGEX.is_match(header.as_str())
+                && !HEADERS_TO_REMOVE.contains(header.as_str())
+            {
                 headers.insert(&*h, v.into());
             }
         }
