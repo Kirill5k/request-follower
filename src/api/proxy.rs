@@ -15,7 +15,7 @@ const X_RELOAD_ON_403: &str = "x-reload-on-403";
 
 lazy_static! {
     static ref CLIENT: Client = Client::new();
-    static ref INVALID_HEADERS_REGEX: Regex = Regex::new(r"^(x|cf|fly)-.*$").unwrap();
+    static ref INVALID_HEADERS_REGEX: Regex = Regex::new(r"^(x|cf|fly|sec)-.*$").unwrap();
     static ref HEADERS_TO_REMOVE: HashSet<&'static str> = {
         HashSet::from([
             "accept-encoding",
