@@ -10,9 +10,9 @@ use time::{Duration, OffsetDateTime};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
 
+pub mod api;
 pub mod config;
 pub mod duration;
-pub mod http;
 
 #[derive(Clone, Debug)]
 pub struct Interrupter {
@@ -60,7 +60,7 @@ async fn main() {
 
     info!("starting web-server on port {}", config.server.port);
     let int = Arc::new(Interrupter::new(tx));
-    let routes = http::routes(int);
+    let routes = api::routes(int);
     let (_, server) = warp::serve(routes).bind_with_graceful_shutdown(
         ([0, 0, 0, 0], config.server.port),
         async move {
